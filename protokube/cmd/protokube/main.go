@@ -136,6 +136,22 @@ func run() error {
 			internalIP = vsphereVolumes.InternalIp()
 		}
 
+	} else if cloud == "spotinst" {
+		glog.Info("Initializing Spotinst volumes")
+		spotinstVolumes, err := protokube.NewSpotinstVolumes()
+		if err != nil {
+			glog.Errorf("Error initializing Spotinst: %q", err)
+			os.Exit(1)
+		}
+		volumes = spotinstVolumes.Volumes
+
+		if clusterID == "" {
+			clusterID = spotinstVolumes.ClusterID()
+		}
+		if internalIP == nil {
+			internalIP = spotinstVolumes.InternalIP()
+		}
+
 	} else {
 		glog.Errorf("Unknown cloud %q", cloud)
 		os.Exit(1)
@@ -194,6 +210,27 @@ func run() error {
 				return err
 			}
 			gossipName = volumes.(*protokube.GCEVolumes).InstanceName()
+
+		} else if cloud == "spotinst" {
+			switch v := volumes.(type) {
+			case *protokube.AWSVolumes:
+				{
+					gossipSeeds, err = v.GossipSeeds()
+					if err != nil {
+						return err
+					}
+					gossipName = v.InstanceID()
+				}
+			case *protokube.GCEVolumes:
+				{
+					gossipSeeds, err = v.GossipSeeds()
+					if err != nil {
+						return err
+					}
+					gossipName = v.InstanceName()
+				}
+			}
+
 		} else {
 			glog.Fatalf("seed provider for %q not yet implemented", cloud)
 		}

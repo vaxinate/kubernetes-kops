@@ -31,6 +31,7 @@ import (
 	api "k8s.io/kops/pkg/apis/kops"
 	"k8s.io/kops/pkg/apis/kops/util"
 	"k8s.io/kops/upup/pkg/fi"
+	"k8s.io/kops/upup/pkg/fi/cloudup/spotinst"
 )
 
 func buildCloudupTags(cluster *api.Cluster) (sets.String, error) {
@@ -73,6 +74,16 @@ func buildCloudupTags(cluster *api.Cluster) (sets.String, error) {
 	case api.CloudProviderVSphere:
 		{
 			tags.Insert("_vsphere")
+		}
+
+	case api.CloudProviderSpotinst:
+		{
+			cloud, err := BuildCloud(cluster)
+			if err != nil {
+				return nil, err
+			}
+			cloudTags := cloud.(*spotinst.SpotinstCloud).Tags()
+			tags.Insert(cloudTags...)
 		}
 
 	case api.CloudProviderBareMetal:

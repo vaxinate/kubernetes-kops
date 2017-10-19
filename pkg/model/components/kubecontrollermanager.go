@@ -110,6 +110,9 @@ func (b *KubeControllerManagerOptionsBuilder) BuildOptions(o interface{}) error 
 	case kops.CloudProviderVSphere:
 		kcm.CloudProvider = "vsphere"
 
+	case kops.CloudProviderSpotinst:
+		kcm.CloudProvider = "spotinst"
+
 	case kops.CloudProviderBareMetal:
 		// No cloudprovider
 

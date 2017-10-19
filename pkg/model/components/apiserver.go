@@ -109,6 +109,8 @@ func (b *KubeAPIServerOptionsBuilder) BuildOptions(o interface{}) error {
 		c.CloudProvider = "external"
 	case kops.CloudProviderVSphere:
 		c.CloudProvider = "vsphere"
+	case kops.CloudProviderSpotinst:
+		c.CloudProvider = "spotinst"
 	case kops.CloudProviderBareMetal:
 		// for baremetal, we don't specify a cloudprovider to apiserver
 	default:

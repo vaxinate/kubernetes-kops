@@ -55,6 +55,8 @@ func (c *ClusterResources) ListResources() (map[string]*tracker.Resource, error)
 		return c.listResourcesGCE()
 	case kops.CloudProviderVSphere:
 		return c.listResourcesVSphere()
+	case kops.CloudProviderSpotinst:
+		return c.listResourcesSpotinst()
 	default:
 		return nil, fmt.Errorf("Delete on clusters on %q not (yet) supported", c.Cloud.ProviderID())
 	}

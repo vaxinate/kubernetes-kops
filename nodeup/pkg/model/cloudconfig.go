@@ -103,6 +103,25 @@ func (b *CloudConfigBuilder) Build(c *fi.ModelBuilderContext) error {
 		// We need this to support Kubernetes vSphere CloudProvider < v1.5.3
 		lines = append(lines, "[disk]")
 		lines = append(lines, "scsicontrollertype = pvscsi")
+
+	case "spotinst":
+		var cloudProvider string
+		if cloudConfig.SpotinstCloudProvider == nil {
+			for _, subnet := range b.Cluster.Spec.Subnets {
+				cloud, known := fi.GuessCloudForZone(subnet.Zone)
+				if known {
+					cloudProvider = string(cloud)
+					break
+				}
+			}
+			if cloudProvider == "" {
+				return fmt.Errorf("spotinst: unable to infer cloud provider from zones")
+			}
+		} else {
+			cloudProvider = *cloudConfig.SpotinstCloudProvider
+		}
+		b.Cluster.Spec.CloudProvider = cloudProvider
+		return b.Build(c)
 	}
 
 	config := "[global]\n" + strings.Join(lines, "\n") + "\n"

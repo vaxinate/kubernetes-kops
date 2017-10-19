@@ -30,6 +30,8 @@ import (
 	"k8s.io/kops/pkg/flagbuilder"
 	"k8s.io/kops/pkg/systemd"
 	"k8s.io/kops/upup/pkg/fi"
+	"k8s.io/kops/upup/pkg/fi/cloudup"
+	"k8s.io/kops/upup/pkg/fi/cloudup/spotinst"
 	"k8s.io/kops/upup/pkg/fi/nodeup/nodetasks"
 
 	"github.com/blang/semver"
@@ -277,6 +279,17 @@ func (t *ProtokubeBuilder) ProtokubeFlags(k8sVersion semver.Version) *ProtokubeF
 				f.DNSProvider = fi.String("coredns")
 				f.ClusterID = fi.String(t.Cluster.ObjectMeta.Name)
 				f.DNSServer = fi.String(*t.Cluster.Spec.CloudConfig.VSphereCoreDNSServer)
+			case kops.CloudProviderSpotinst:
+				{
+					cloud, err := cloudup.BuildCloud(t.Cluster)
+					if err != nil {
+						glog.Errorf("Unable to determine DNS provider: %v", err)
+					} else {
+						if spotinstCloud, ok := cloud.(*spotinst.SpotinstCloud); ok {
+							f.DNSProvider = fi.String(spotinstCloud.DNSProvider())
+						}
+					}
+				}
 			default:
 				glog.Warningf("Unknown cloudprovider %q; won't set DNS provider", t.Cluster.Spec.CloudProvider)
 			}

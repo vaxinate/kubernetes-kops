@@ -49,24 +49,28 @@ func PerformAssignments(c *kops.Cluster) error {
 		c.Spec.Topology = &kops.TopologySpec{Masters: kops.TopologyPublic, Nodes: kops.TopologyPublic}
 	}
 
-	// Currently only AWS uses NetworkCIDRs
-	setNetworkCIDR := cloud.ProviderID() == kops.CloudProviderAWS
-	if setNetworkCIDR && c.Spec.NetworkCIDR == "" {
-		if c.SharedVPC() {
-			vpcInfo, err := cloud.FindVPCInfo(c.Spec.NetworkID)
-			if err != nil {
-				return err
+	// Set NetworkCIDRs.
+	if c.Spec.NetworkCIDR == "" {
+		switch cloud.ProviderID() {
+		case kops.CloudProviderAWS, kops.CloudProviderSpotinst:
+			{
+				if c.SharedVPC() {
+					vpcInfo, err := cloud.FindVPCInfo(c.Spec.NetworkID)
+					if err != nil {
+						return err
+					}
+					if vpcInfo == nil {
+						return fmt.Errorf("unable to find VPC ID %q", c.Spec.NetworkID)
+					}
+					c.Spec.NetworkCIDR = vpcInfo.CIDR
+					if c.Spec.NetworkCIDR == "" {
+						return fmt.Errorf("Unable to infer NetworkCIDR from VPC ID, please specify --network-cidr")
+					}
+				} else {
+					// TODO: Choose non-overlapping networking CIDRs for VPCs, using vpcInfo
+					c.Spec.NetworkCIDR = "172.20.0.0/16"
+				}
 			}
-			if vpcInfo == nil {
-				return fmt.Errorf("unable to find VPC ID %q", c.Spec.NetworkID)
-			}
-			c.Spec.NetworkCIDR = vpcInfo.CIDR
-			if c.Spec.NetworkCIDR == "" {
-				return fmt.Errorf("Unable to infer NetworkCIDR from VPC ID, please specify --network-cidr")
-			}
-		} else {
-			// TODO: Choose non-overlapping networking CIDRs for VPCs, using vpcInfo
-			c.Spec.NetworkCIDR = "172.20.0.0/16"
 		}
 	}
 
@@ -79,8 +83,9 @@ func PerformAssignments(c *kops.Cluster) error {
 		c.Spec.MasterPublicName = "api." + c.ObjectMeta.Name
 	}
 
-	// We only assign subnet CIDRs on AWS
-	if cloud.ProviderID() == kops.CloudProviderAWS {
+	// Assign subnet CIDRs.
+	switch cloud.ProviderID() {
+	case kops.CloudProviderAWS, kops.CloudProviderSpotinst:
 		// TODO: Use vpcInfo
 		err = assignCIDRsToSubnets(c)
 		if err != nil {

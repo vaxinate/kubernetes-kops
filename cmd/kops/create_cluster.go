@@ -122,6 +122,9 @@ type CreateClusterOptions struct {
 	// We can remove this once we support higher versions.
 	VSphereDatastore string
 
+	// Spotinst options
+	SpotinstCloudProvider string
+
 	// ConfigBase is the location where we will store the configuration, it defaults to the state store
 	ConfigBase string
 }
@@ -309,6 +312,12 @@ func NewCmdCreateCluster(f *util.Factory, out io.Writer) *cobra.Command {
 		cmd.Flags().StringVar(&options.VSphereCoreDNSServer, "vsphere-coredns-server", options.VSphereCoreDNSServer, "vsphere-coredns-server is required for vSphere.")
 		cmd.Flags().StringVar(&options.VSphereDatastore, "vsphere-datastore", options.VSphereDatastore, "vsphere-datastore is required for vSphere.  Set a valid datastore in which to store dynamic provision volumes.")
 	}
+
+	if featureflag.SpotinstCloudProvider.Enabled() {
+		// Spotinst flags
+		cmd.Flags().StringVar(&options.SpotinstCloudProvider, "spotinst-cloud-provider", options.SpotinstCloudProvider, "Sets the underlying cloud provider")
+	}
+
 	return cmd
 }
 
@@ -710,6 +719,19 @@ func RunCreateCluster(f *util.Factory, out io.Writer, c *CreateClusterOptions) e
 				return fmt.Errorf("vsphere-datastore is required for vSphere. Set a valid datastore in which to store dynamic provision volumes.")
 			}
 			cluster.Spec.CloudConfig.VSphereDatastore = fi.String(c.VSphereDatastore)
+		}
+
+		if c.Cloud == "spotinst" {
+			if !featureflag.SpotinstCloudProvider.Enabled() {
+				return fmt.Errorf("Feature flag SpotinstCloudProvider is not set. Cloud Spotinst will not be supported.")
+			}
+			if cluster.Spec.CloudConfig == nil {
+				cluster.Spec.CloudConfig = &api.CloudConfiguration{}
+			}
+			if c.SpotinstCloudProvider == "" {
+				return fmt.Errorf("spotinst: --spotinst-cloud-provider is required for Spotinst")
+			}
+			cluster.Spec.CloudConfig.SpotinstCloudProvider = fi.String(c.SpotinstCloudProvider)
 		}
 	}
 

@@ -43,6 +43,7 @@ import (
 
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/kops/upup/pkg/fi/cloudup/spotinst"
 )
 
 type TemplateFunctions struct {
@@ -180,6 +181,13 @@ func (tf *TemplateFunctions) DnsControllerArgv() ([]string, error) {
 		case kops.CloudProviderVSphere:
 			argv = append(argv, "--dns=coredns")
 			argv = append(argv, "--dns-server="+*tf.cluster.Spec.CloudConfig.VSphereCoreDNSServer)
+		case kops.CloudProviderSpotinst:
+			cloud, err := BuildCloud(tf.cluster)
+			if err != nil {
+				return nil, err
+			}
+			cloudArgv := cloud.(*spotinst.SpotinstCloud).DNSControllerArgv()
+			argv = append(argv, cloudArgv...)
 
 		default:
 			return nil, fmt.Errorf("unhandled cloudprovider %q", tf.cluster.Spec.CloudProvider)
