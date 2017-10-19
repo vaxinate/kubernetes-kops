@@ -385,3 +385,6 @@
 [submodule "_vendor/github.com/markbates/inflect"]
 	path = _vendor/github.com/markbates/inflect
 	url = https://github.com/markbates/inflect
+[submodule "_vendor/github.com/spotinst/spotinst-sdk-go"]
+	path = _vendor/github.com/spotinst/spotinst-sdk-go
+	url = https://github.com/spotinst/spotinst-sdk-go.git
