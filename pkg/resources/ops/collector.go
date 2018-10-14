@@ -25,6 +25,7 @@ import (
 	"k8s.io/kops/pkg/resources/digitalocean"
 	"k8s.io/kops/pkg/resources/gce"
 	"k8s.io/kops/pkg/resources/openstack"
+	"k8s.io/kops/pkg/resources/spotinst"
 	"k8s.io/kops/upup/pkg/fi"
 	"k8s.io/kops/upup/pkg/fi/cloudup/awsup"
 	cloudgce "k8s.io/kops/upup/pkg/fi/cloudup/gce"
@@ -33,8 +34,8 @@ import (
 )
 
 // ListResources collects the resources from the specified cloud
-func ListResources(cloud fi.Cloud, clusterName string, region string) (map[string]*resources.Resource, error) {
-	switch cloud.ProviderID() {
+func ListResources(cluster *kops.Cluster, cloud fi.Cloud, clusterName string, region string) (map[string]*resources.Resource, error) {
+	switch kops.CloudProviderID(cluster.Spec.CloudProvider) {
 	case kops.CloudProviderAWS:
 		return aws.ListResourcesAWS(cloud.(awsup.AWSCloud), clusterName)
 	case kops.CloudProviderDO:
@@ -45,6 +46,8 @@ func ListResources(cloud fi.Cloud, clusterName string, region string) (map[strin
 		return openstack.ListResources(cloud.(cloudopenstack.OpenstackCloud), clusterName)
 	case kops.CloudProviderVSphere:
 		return resources.ListResourcesVSphere(cloud.(*vsphere.VSphereCloud), clusterName)
+	case kops.CloudProviderSpotinst:
+		return spotinst.ListResources(cloud, clusterName)
 	default:
 		return nil, fmt.Errorf("delete on clusters on %q not (yet) supported", cloud.ProviderID())
 	}

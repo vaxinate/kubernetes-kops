@@ -49,8 +49,11 @@ func PerformAssignments(c *kops.Cluster) error {
 		c.Spec.Topology = &kops.TopologySpec{Masters: kops.TopologyPublic, Nodes: kops.TopologyPublic}
 	}
 
-	// Currently only AWS uses NetworkCIDRs
-	setNetworkCIDR := (cloud.ProviderID() == kops.CloudProviderAWS) || (cloud.ProviderID() == kops.CloudProviderALI)
+	cloudProvider := cloud.ProviderID()
+
+	// Currently only AWS/ALI use NetworkCIDRs
+	setNetworkCIDR := (cloudProvider == kops.CloudProviderAWS) || (cloudProvider == kops.CloudProviderALI)
+
 	if setNetworkCIDR && c.Spec.NetworkCIDR == "" {
 		if c.SharedVPC() {
 			vpcInfo, err := cloud.FindVPCInfo(c.Spec.NetworkID)
@@ -65,10 +68,10 @@ func PerformAssignments(c *kops.Cluster) error {
 				return fmt.Errorf("Unable to infer NetworkCIDR from VPC ID, please specify --network-cidr")
 			}
 		} else {
-			if cloud.ProviderID() == kops.CloudProviderAWS {
+			if cloudProvider == kops.CloudProviderAWS {
 				// TODO: Choose non-overlapping networking CIDRs for VPCs, using vpcInfo
 				c.Spec.NetworkCIDR = "172.20.0.0/16"
-			} else if cloud.ProviderID() == kops.CloudProviderALI {
+			} else if cloudProvider == kops.CloudProviderALI {
 				c.Spec.NetworkCIDR = "192.168.0.0/16"
 			}
 		}
@@ -89,8 +92,9 @@ func PerformAssignments(c *kops.Cluster) error {
 	}
 
 	// We only assign subnet CIDRs on AWS
-	pd := cloud.ProviderID()
-	if pd == kops.CloudProviderAWS || pd == kops.CloudProviderOpenstack || pd == kops.CloudProviderALI {
+	if cloudProvider == kops.CloudProviderAWS ||
+		cloudProvider == kops.CloudProviderOpenstack ||
+		cloudProvider == kops.CloudProviderALI {
 		// TODO: Use vpcInfo
 		err = assignCIDRsToSubnets(c)
 		if err != nil {
